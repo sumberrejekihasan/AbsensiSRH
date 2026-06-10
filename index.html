@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Absensi Karyawan</title>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--blue:#1a73e8;--dark:#0d47a1;--green:#10b981;--yellow:#f59e0b;--red:#ef4444}
+  body{
+    font-family:'Segoe UI',system-ui,sans-serif;
+    background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+    min-height:100vh;display:flex;align-items:center;justify-content:center;padding:12px;
+  }
+  .card{background:white;border-radius:20px;padding:24px 20px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+  .hdr{text-align:center;margin-bottom:16px}
+  .hdr .ico{font-size:40px;margin-bottom:4px}
+  .hdr h1{font-size:18px;color:var(--blue);font-weight:700}
+  .hdr p{color:#999;font-size:11px;margin-top:2px}
+  .jam-box{background:linear-gradient(135deg,var(--blue),var(--dark));color:white;text-align:center;padding:12px 16px;border-radius:14px;margin-bottom:16px}
+  .jam-box .jam{font-size:30px;font-weight:700;letter-spacing:2px;font-variant-numeric:tabular-nums}
+  .jam-box .tgl{font-size:11px;opacity:.85;margin-top:2px}
+  .tabs{display:grid;grid-template-columns:1fr 1fr;background:#f0f4f8;border-radius:10px;padding:3px;gap:3px;margin-bottom:14px}
+  .tab{padding:9px 6px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:#888;transition:all .2s}
+  .tab.on{background:white;color:var(--blue);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+  .cam-sec{display:none}.cam-sec.show{display:block}
+  #reader{border-radius:12px;overflow:hidden;margin-bottom:10px;background:#111;width:100%}
+  #reader video{object-fit:cover!important}
+  #reader__camera_selection{width:100%!important;padding:6px 10px!important;border-radius:8px!important;border:1.5px solid #e0e0e0!important;font-size:12px!important;margin-bottom:6px!important}
+  #reader__dashboard{padding:6px!important}
+  #reader__dashboard_section_swaplink{font-size:12px!important;color:var(--blue)!important}
+  .scan-msg{padding:9px 12px;border-radius:9px;font-size:12px;text-align:center;margin-bottom:10px;font-weight:600;display:none}
+  .scan-msg.show{display:block}
+  .scan-msg.ok{background:#d1fae5;color:#065f46}
+  .scan-msg.info{background:#dbeafe;color:#1e40af}
+  .scan-msg.warn{background:#fef3c7;color:#92400e}
+  .scan-msg.err{background:#fee2e2;color:#991b1b}
+  .man-sec{display:none}.man-sec.show{display:block}
+  .inp-grp{margin-bottom:14px}
+  .inp-grp label{display:block;font-weight:600;color:#333;margin-bottom:6px;font-size:13px}
+  .inp-grp input{width:100%;padding:12px 14px;border:2px solid #e0e0e0;border-radius:11px;font-size:20px;text-align:center;letter-spacing:3px;font-weight:600;outline:none;transition:border-color .2s}
+  .inp-grp input:focus{border-color:var(--blue)}
+  .cfg-warn{background:#fef3c7;border-radius:10px;padding:10px 12px;font-size:12px;color:#92400e;margin-bottom:14px;text-align:center;display:none}
+  .cfg-warn.show{display:block}
+  .btn{width:100%;padding:13px;border:none;border-radius:11px;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s}
+  .btn-p{background:linear-gradient(135deg,var(--blue),var(--dark));color:white}
+  .btn-p:hover{transform:translateY(-1px);box-shadow:0 5px 18px rgba(26,115,232,.4)}
+  .btn-sh{background:white;border:2px solid var(--blue);color:var(--blue);margin-bottom:9px;font-size:13px}
+  .btn-sh:hover{background:var(--blue);color:white}
+  .btn-ak{border:2px solid;margin-bottom:9px;background:white}
+  .ak-i{border-color:var(--yellow);color:var(--yellow)}.ak-i:hover{background:var(--yellow);color:white}
+  .ak-s{border-color:var(--green);color:var(--green)}.ak-s:hover{background:var(--green);color:white}
+  .ak-p{border-color:var(--red);color:var(--red)}.ak-p:hover{background:var(--red);color:white}
+  .info-box{background:#f8f9fa;border-radius:11px;padding:13px;margin-bottom:14px}
+  .info-box .nm{font-size:16px;font-weight:700;color:var(--blue)}
+  .info-box .dp{font-size:12px;color:#666;margin-top:3px}
+  .alert{padding:14px;border-radius:11px;text-align:center;font-weight:600;margin-bottom:14px;line-height:1.7;font-size:13px;white-space:pre-line}
+  .a-ok{background:#d1fae5;color:#065f46}
+  .a-er{background:#fee2e2;color:#991b1b}
+  .a-in{background:#dbeafe;color:#1e40af}
+  .loading{text-align:center;padding:24px;color:#888}
+  .sp{width:32px;height:32px;border:4px solid #e0e0e0;border-top-color:var(--blue);border-radius:50%;animation:sp .8s linear infinite;margin:0 auto 10px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .sec-ttl{font-size:12px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:1px;margin-bottom:11px}
+  .back{background:none;border:none;color:var(--blue);font-size:13px;cursor:pointer;padding:5px 0;display:flex;align-items:center;gap:3px;margin-bottom:12px;font-weight:600}
+  .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;margin-top:4px}
+  .bw{background:#fef3c7;color:#92400e}.bg{background:#d1fae5;color:#065f46}
+</style>
+</head>
+<body>
+<div class="card" id="app"></div>
+<script>
+// ============================================================
+// ⚙️  KONFIGURASI — ISI URL APPS SCRIPT ANDA DI SINI
+// ============================================================
+var APPS_SCRIPT_URL = 'GANTI_DENGAN_URL_APPS_SCRIPT_ANDA';
+// Contoh:
+// var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbXXX.../exec';
+// ============================================================
+
+var S = { mode:'camera', qr:null, clockTmr:null, curData:null, cooldown:false };
+
+function init() { viewScan(); }
+
+// ── VIEW SCAN ─────────────────────────────────────────────────
+function viewScan() {
+  stopScanner(); stopClock();
+  var cOn = S.mode==='camera';
+
+  g('app').innerHTML =
+    '<div class="hdr"><div class="ico">📋</div><h1>ABSENSI KARYAWAN</h1><p>Sistem Absensi Digital</p></div>' +
+    '<div class="jam-box"><div class="jam" id="clk">--:--:--</div><div class="tgl" id="dt">Loading...</div></div>' +
+    (APPS_SCRIPT_URL.startsWith('GANTI')
+      ? '<div class="cfg-warn show">⚠️ Isi <b>APPS_SCRIPT_URL</b> di file index.html terlebih dahulu!</div>'
+      : '') +
+    '<div class="tabs">' +
+      '<button class="tab'+(cOn?' on':'')+'" onclick="sw(\'camera\')">📷 Scan Kamera</button>' +
+      '<button class="tab'+(!cOn?' on':'')+'" onclick="sw(\'manual\')">⌨️ Input Manual</button>' +
+    '</div>' +
+    '<div class="cam-sec'+(cOn?' show':'')+'">' +
+      '<div id="reader"></div>' +
+      '<div class="scan-msg" id="smsg"></div>' +
+    '</div>' +
+    '<div class="man-sec'+(!cOn?' show':'')+'">' +
+      '<div class="inp-grp"><label>🪪 Masukkan ID / Barcode</label>' +
+      '<input type="text" id="bi" placeholder="Ketik atau scan..." autocomplete="off"></div>' +
+      '<button class="btn btn-p" onclick="doManual()">✅ Absen Sekarang</button>' +
+    '</div>';
+
+  startClock();
+  if (!cOn) { setupManual(); }
+  else { setTimeout(startScanner, 300); }
+}
+
+function sw(m) { S.mode=m; stopScanner(); viewScan(); }
+
+// ── SCANNER ───────────────────────────────────────────────────
+function startScanner() {
+  if (!g('reader') || typeof Html5Qrcode === 'undefined') {
+    showMsg('❌ Library scanner belum termuat. Periksa koneksi internet.', 'err');
+    return;
+  }
+  S.cooldown = false;
+  S.qr = new Html5Qrcode('reader');
+
+  var cfg = {
+    fps: 10,
+    qrbox: function(w,h){ var s=Math.round(Math.min(w,h)*0.65); return {width:s,height:s}; },
+    aspectRatio: 1.0,
+    showTorchButtonIfSupported: true,
+    formatsToSupport: [
+      Html5QrcodeSupportedFormats.QR_CODE,
+      Html5QrcodeSupportedFormats.CODE_128,
+      Html5QrcodeSupportedFormats.CODE_39,
+      Html5QrcodeSupportedFormats.EAN_13,
+      Html5QrcodeSupportedFormats.EAN_8,
+      Html5QrcodeSupportedFormats.DATA_MATRIX
+    ]
+  };
+
+  Html5Qrcode.getCameras().then(function(cams) {
+    if (!cams || !cams.length) { showMsg('❌ Tidak ada kamera ditemukan','err'); return; }
+
+    // Pilih kamera belakang
+    var cam = cams[cams.length-1];
+    for (var i=0;i<cams.length;i++) {
+      if (/back|rear|environment/i.test(cams[i].label)) { cam=cams[i]; break; }
+    }
+
+    // Coba dengan deviceId dulu
+    S.qr.start(cam.id, cfg, onOk, function(){}).catch(function() {
+      // Fallback: facingMode environment
+      S.qr.start({facingMode:'environment'}, cfg, onOk, function(){}).catch(function() {
+        // Fallback terakhir: kamera apapun
+        S.qr.start({facingMode:'user'}, cfg, onOk, function(){}).catch(function(e) {
+          showMsg('❌ Kamera gagal dibuka: '+String(e),'err');
+        });
+      });
+    });
+
+  }).catch(function(e) {
+    if (/NotAllowed|Permission|Denied/i.test(String(e))) {
+      showMsg('⛔ Izin kamera ditolak.\nBuka Pengaturan browser → Izinkan Kamera → Muat Ulang halaman.','warn');
+    } else {
+      showMsg('❌ '+String(e),'err');
+    }
+  });
+}
+
+function onOk(txt) {
+  if (S.cooldown) return;
+  S.cooldown = true;
+  showMsg('✅ Barcode terbaca: '+txt,'ok');
+  beep();
+  stopScanner();
+  setTimeout(function(){ doBarcode(txt); }, 500);
+}
+
+function stopScanner() {
+  if (S.qr) {
+    try { S.qr.stop().catch(function(){}); } catch(e) {}
+    S.qr = null;
+  }
+}
+
+function showMsg(msg, type) {
+  var el=g('smsg'); if(!el) return;
+  el.innerHTML=msg; el.className='scan-msg show '+(type||'info');
+}
+
+// ── MANUAL ────────────────────────────────────────────────────
+function setupManual() {
+  var inp=g('bi'); if(!inp) return;
+  inp.addEventListener('keypress',function(e){if(e.key==='Enter')doManual();});
+  var t; inp.addEventListener('input',function(){
+    clearTimeout(t); t=setTimeout(function(){if(inp.value.trim().length>=3)doManual();},700);
+  });
+  setTimeout(function(){inp.focus();},100);
+}
+function doManual() {
+  var inp=g('bi'); if(!inp||!inp.value.trim()) return;
+  doBarcode(inp.value.trim());
+}
+
+// ── API CALL ke Apps Script via fetch ─────────────────────────
+// Apps Script harus menerima POST dengan header Content-Type: application/json
+// dan me-return JSON (lihat Code.gs — fungsi doPost)
+function doBarcode(bc) {
+  stopScanner(); stopClock();
+  loading('Membaca data karyawan...');
+  api('prosesAbsensi', {barcode:bc}, onResp, onErr);
+}
+
+function api(fn, data, ok, fail) {
+  if (APPS_SCRIPT_URL.startsWith('GANTI')) { fail({message:'URL belum diisi!'}); return; }
+
+  // Apps Script tidak support CORS POST JSON langsung,
+  // maka kita kirim sebagai GET dengan parameter (lebih simpel & pasti bisa)
+  var params = '?fn='+encodeURIComponent(fn)+'&data='+encodeURIComponent(JSON.stringify(data));
+  fetch(APPS_SCRIPT_URL + params, { method:'GET', redirect:'follow' })
+    .then(function(r){ return r.json(); })
+    .then(ok)
+    .catch(fail);
+}
+
+function onResp(d) {
+  if (d.status==='pilih_shift') vShift(d);
+  else if (d.status==='pilih_aksi') vAksi(d);
+  else vHasil(d);
+}
+function onErr(e) {
+  vHasil({status:'error', pesan:'Gagal terhubung ke server.\n'+(e.message||'Network error')});
+}
+
+// ── VIEWS ─────────────────────────────────────────────────────
+function vShift(d) {
+  S.curData=d; stopClock();
+  var btns=Object.entries(d.shifts).map(function(e){
+    return '<button class="btn btn-sh" onclick="doShift(\''+e[0]+'\')">Shift '+e[0]+': '+e[1].label+'</button>';
+  }).join('');
+  g('app').innerHTML=
+    '<button class="back" onclick="viewScan()">← Kembali</button>'+
+    '<div class="info-box"><div class="nm">👤 '+d.karyawan.nama+'</div>'+
+    '<div class="dp">🏢 '+d.karyawan.departemen+'</div>'+
+    '<div class="dp">🕐 '+d.jam+' | '+d.hari+', '+fdt(d.tanggal)+'</div></div>'+
+    '<div class="sec-ttl">Pilih Shift Kerja</div>'+btns;
+}
+function vAksi(d) {
+  S.curData=d; stopClock();
+  var btns=d.opsi.map(function(o){
+    var c='btn-ak';
+    if(o.value==='mulai_istirahat') c+=' ak-i';
+    if(o.value==='selesai_istirahat') c+=' ak-s';
+    if(o.value==='pulang') c+=' ak-p';
+    return '<button class="btn '+c+'" onclick="doAksi(\''+o.value+'\')">'+o.label+'</button>';
+  }).join('');
+  var im=d.statusHariIni.jamMasuk?'<div class="dp">✅ Masuk: '+d.statusHariIni.jamMasuk+' | Shift '+d.statusHariIni.shift+'</div>':'';
+  var ii=d.statusHariIni.mulaiIstirahat?'<div class="dp">🍽️ Istirahat: '+d.statusHariIni.mulaiIstirahat+(d.statusHariIni.selesaiIstirahat?' – '+d.statusHariIni.selesaiIstirahat:' (sedang)')+'</div>':'';
+  g('app').innerHTML=
+    '<button class="back" onclick="viewScan()">← Kembali</button>'+
+    '<div class="info-box"><div class="nm">👤 '+d.karyawan.nama+'</div>'+
+    '<div class="dp">🏢 '+d.karyawan.departemen+'</div>'+im+ii+
+    '<div class="dp">🕐 '+d.jam+'</div></div>'+
+    '<div class="sec-ttl">Pilih Aksi</div>'+btns;
+}
+function vHasil(h) {
+  stopClock();
+  var cls=h.status==='error'?'a-er':h.status==='info'?'a-in':'a-ok';
+  var ex=(h.keterlambatan>0?'<div class="badge bw">⚠️ Terlambat '+h.keterlambatan+' menit</div>':'')+
+         (h.lembur>0?'<div class="badge bg">⏰ Lembur '+h.lembur+' menit</div>':'');
+  g('app').innerHTML=
+    '<div style="text-align:center;padding:8px 0 12px">'+
+    '<div style="font-size:54px;margin-bottom:10px">'+emj(h)+'</div>'+
+    '<div class="alert '+cls+'">'+h.pesan+'</div>'+ex+'</div>'+
+    '<button class="btn btn-p" onclick="viewScan()">🔄 Absen Berikutnya</button>';
+  setTimeout(viewScan,5000);
+}
+
+// ── AKSI ──────────────────────────────────────────────────────
+function doShift(sh) {
+  loading('Mencatat absensi masuk...');
+  api('konfirmasiAbsensi',{barcode:S.curData.barcode,aksi:'masuk',shift:sh},onResp,onErr);
+}
+function doAksi(ak) {
+  var m={mulai_istirahat:'Mencatat istirahat...',selesai_istirahat:'Mencatat selesai istirahat...',pulang:'Mencatat absen pulang...'};
+  loading(m[ak]||'Memproses...');
+  api('konfirmasiAbsensi',{barcode:S.curData.barcode,aksi:ak},onResp,onErr);
+}
+
+// ── UTILS ─────────────────────────────────────────────────────
+function loading(msg){stopClock();g('app').innerHTML='<div class="loading"><div class="sp"></div><p>'+(msg||'...')+'</p></div>';}
+function g(id){return document.getElementById(id);}
+function startClock(){
+  stopClock();
+  function tick(){var now=new Date();var c=g('clk'),d=g('dt');
+    if(c)c.textContent=now.toLocaleTimeString('id-ID');
+    if(d)d.textContent=now.toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'});}
+  tick(); S.clockTmr=setInterval(tick,1000);
+}
+function stopClock(){if(S.clockTmr){clearInterval(S.clockTmr);S.clockTmr=null;}}
+function fdt(t){return new Date(t).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});}
+function emj(h){
+  if(h.status==='error')return'❌';if(h.aksi==='masuk')return'👋';
+  if(h.aksi==='mulai_istirahat')return'🍽️';if(h.aksi==='selesai_istirahat')return'💪';
+  if(h.aksi==='pulang')return'🏠';return'✅';
+}
+function beep(){
+  try{var c=new(window.AudioContext||window.webkitAudioContext)();var o=c.createOscillator(),gn=c.createGain();
+    o.connect(gn);gn.connect(c.destination);o.type='sine';o.frequency.value=880;
+    gn.gain.setValueAtTime(.3,c.currentTime);gn.gain.exponentialRampToValueAtTime(.001,c.currentTime+.25);
+    o.start();o.stop(c.currentTime+.25);}catch(e){}
+}
+init();
+</script>
+</body>
+</html>
